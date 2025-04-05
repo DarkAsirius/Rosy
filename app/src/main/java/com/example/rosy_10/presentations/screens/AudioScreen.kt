@@ -23,6 +23,11 @@ fun AudioScreen() {
     val errorMessage by viewModel.errorMessage.collectAsState()
     val textFromSpeech by viewModel.textFromSpeech.collectAsState()
 
+    // Общий модификатор для всех кнопок
+    val buttonModifier = Modifier
+        .width(250.dp)  // Фиксированная ширина
+        .height(56.dp)  // Стандартная высота Material Design
+
     LaunchedEffect(Unit) {
         viewModel.initRecorder(context)
     }
@@ -37,6 +42,7 @@ fun AudioScreen() {
         if (isRecording) {
             Button(
                 onClick = { viewModel.stopRecording() },
+                modifier = buttonModifier,
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
             ) {
                 Icon(Icons.Default.Stop, contentDescription = "Stop")
@@ -46,6 +52,7 @@ fun AudioScreen() {
         } else {
             Button(
                 onClick = { viewModel.startRecording() },
+                modifier = buttonModifier,
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Green)
             ) {
                 Icon(Icons.Default.Mic, contentDescription = "Mic")
@@ -58,6 +65,7 @@ fun AudioScreen() {
             // Кнопка воспроизведения
             Button(
                 onClick = { viewModel.playRecording() },
+                modifier = buttonModifier,
                 enabled = recordedFile != null
             ) {
                 Icon(Icons.Default.PlayArrow, contentDescription = "Play")
@@ -70,10 +78,8 @@ fun AudioScreen() {
             // Кнопка удаления
             Button(
                 onClick = { viewModel.deleteRecording() },
+                modifier = buttonModifier,
                 enabled = recordedFile != null,
-                modifier = Modifier
-                    .width(250.dp)  // Фиксированная ширина (как у других кнопок)
-                    .height(56.dp), // Стандартная высота Material Design
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Gray)
             ) {
                 Icon(Icons.Default.Delete, contentDescription = "Delete")
@@ -86,6 +92,7 @@ fun AudioScreen() {
             // Кнопка преобразования в текст
             Button(
                 onClick = { viewModel.convertToText() },
+                modifier = buttonModifier,
                 enabled = recordedFile != null,
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Blue)
             ) {
