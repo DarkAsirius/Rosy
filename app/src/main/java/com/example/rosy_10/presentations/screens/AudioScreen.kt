@@ -1,3 +1,4 @@
+// AudioScreen.kt
 package com.example.rosy_10.presentations.screens
 
 import androidx.compose.foundation.layout.*
@@ -7,6 +8,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -16,106 +18,99 @@ import com.example.rosy_10.presentations.viewmodels.AudioViewModel
 fun AudioScreen() {
     val context = LocalContext.current
     val viewModel: AudioViewModel = viewModel()
-    val state by viewModel.recordingState.collectAsState()
-    val error by viewModel.errorMessage.collectAsState()
+    val isRecording by viewModel.isRecording.collectAsState()
+    val recordedFile by viewModel.recordedFile.collectAsState()
+    val errorMessage by viewModel.errorMessage.collectAsState()
+    val textFromSpeech by viewModel.textFromSpeech.collectAsState()
 
-    Box(
+    LaunchedEffect(Unit) {
+        viewModel.initRecorder(context)
+    }
+
+    Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
-        contentAlignment = Alignment.Center
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
-        // Проверка состояний через when (полностью безопасная)
-        when (state) {
-            is AudioViewModel.RecordingState.Active -> {
-                ActiveContent(
-                    onStop = { viewModel.stopRecording() }
-                )
+        if (isRecording) {
+            Button(
+                onClick = { viewModel.stopRecording() },
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+            ) {
+                Icon(Icons.Default.Stop, contentDescription = "Stop")
+                Spacer(Modifier.width(8.dp))
+                Text("Stop Recording")
             }
-            AudioViewModel.RecordingState.Stopped -> {
-                StoppedContent(
-                    onRestart = { viewModel.startRecording() }
-                )
+        } else {
+            Button(
+                onClick = { viewModel.startRecording() },
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Green)
+            ) {
+                Icon(Icons.Default.Mic, contentDescription = "Mic")
+                Spacer(Modifier.width(8.dp))
+                Text("Start Recording")
             }
-            AudioViewModel.RecordingState.Idle -> {
-                IdleContent(
-                    onStart = { viewModel.startRecording() }
+
+            Spacer(Modifier.height(16.dp))
+
+            // Кнопка воспроизведения
+            Button(
+                onClick = { viewModel.playRecording() },
+                enabled = recordedFile != null
+            ) {
+                Icon(Icons.Default.PlayArrow, contentDescription = "Play")
+                Spacer(Modifier.width(8.dp))
+                Text("Play Recording")
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            // Кнопка удаления
+            Button(
+                onClick = { viewModel.deleteRecording() },
+                enabled = recordedFile != null,
+                modifier = Modifier
+                    .width(250.dp)  // Фиксированная ширина (как у других кнопок)
+                    .height(56.dp), // Стандартная высота Material Design
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Gray)
+            ) {
+                Icon(Icons.Default.Delete, contentDescription = "Delete")
+                Spacer(Modifier.width(8.dp))
+                Text("Delete Recording")
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            // Кнопка преобразования в текст
+            Button(
+                onClick = { viewModel.convertToText() },
+                enabled = recordedFile != null,
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Blue)
+            ) {
+                Icon(Icons.Default.TextFields, contentDescription = "Convert")
+                Spacer(Modifier.width(8.dp))
+                Text("Convert to Text")
+            }
+
+            // Отображение распознанного текста
+            textFromSpeech?.let { text ->
+                Spacer(Modifier.height(16.dp))
+                Text(
+                    text = "Recognized text: $text",
+                    style = MaterialTheme.typography.bodyMedium
                 )
             }
         }
 
-        ErrorContent(error)
-    }
-}
-
-@Composable
-private fun IdleContent(onStart: () -> Unit) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Icon(
-            imageVector = Icons.Default.Mic,
-            contentDescription = "Ready to record",
-            modifier = Modifier.size(64.dp),
-            tint = MaterialTheme.colorScheme.primary
-        )
-        Spacer(modifier = Modifier.height(24.dp))
-        Button(onClick = onStart) {
-            Text("Start Recording")
-        }
-    }
-}
-
-@Composable
-private fun ActiveContent(onStop: () -> Unit) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        CircularProgressIndicator()
-        Spacer(modifier = Modifier.height(16.dp))
-        Text("Recording...")
-        Spacer(modifier = Modifier.height(16.dp))
-        Button(
-            onClick = onStop,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.errorContainer
+        // Отображение ошибок
+        errorMessage?.let { message ->
+            Spacer(Modifier.height(16.dp))
+            Text(
+                text = message,
+                color = MaterialTheme.colorScheme.error
             )
-        ) {
-            Text("Stop Recording")
         }
-    }
-}
-
-@Composable
-private fun StoppedContent(onRestart: () -> Unit) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Icon(
-            imageVector = Icons.Default.CheckCircle,
-            contentDescription = "Recording complete",
-            modifier = Modifier.size(64.dp),
-            tint = MaterialTheme.colorScheme.primary
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Text("Recording saved")
-        Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = onRestart) {
-            Text("Record Again")
-        }
-    }
-}
-
-@Composable
-private fun ErrorContent(message: String?) {
-    message?.let {
-        Text(
-            text = it,
-            color = MaterialTheme.colorScheme.error,
-            modifier = Modifier.padding(16.dp)
-        )
     }
 }
